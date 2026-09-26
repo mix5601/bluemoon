@@ -1,0 +1,16 @@
+name: BlueMoon
+version: '${version}'
+main: dev.bluemoon.BlueMoon
+api-version: '1.21'
+description: Blockbench 모델 + MythicMobs 스타일 스킬 커스텀 몹 플러그인
+authors: [mix5601]
+commands:
+  bluemoon:
+    description: BlueMoon 관리 명령어
+    aliases: [bm]
+    permission: bluemoon.admin
+    usage: /<command> [reload|spawn|list|cast|anim|pack|killall]
+permissions:
+  bluemoon.admin:
+    description: BlueMoon 관리 명령어 사용
+    default: op

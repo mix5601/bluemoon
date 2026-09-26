@@ -1,0 +1,41 @@
+# 메타스킬 정의 (MythicMobs 형식)
+# 라인 문법: 메카닉{옵션} @타겟터{옵션} ?조건 ?~타겟조건 확률
+#
+# 블록벤치 연동 포인트
+#  1) animation{a=애니메이션} 으로 .bbmodel 의 애니메이션을 재생합니다.
+#  2) 블록벤치 애니메이션의 "Effects > Timeline" 키프레임 스크립트에 스킬 라인을 적으면
+#     애니메이션이 그 시간에 도달했을 때 실행됩니다 (golem.bbmodel 의 slam 0.7초 참고).
+#  3) @ModelPart{bone=right_hand} 로 본/로케이터의 실제 위치를 타겟으로 쓸 수 있습니다.
+
+GolemSlam:
+  Cooldown: 6
+  Skills:
+  - animation{a=slam} @self
+  - message{m="&7[골렘] &f땅이 흔들린다!"} @PlayersInRadius{r=16}
+  # 실제 피해/넉백은 slam 애니메이션 0.7초 타임라인 키프레임에서 발생합니다.
+
+GolemRock:
+  Cooldown: 4
+  Skills:
+  - animation{a=attack} @self
+  - delay 5
+  - projectile{onTick=GolemRock_Tick;onHit=GolemRock_Hit;onEnd=GolemRock_End;v=18;hr=1;md=30;syo=2.2}
+GolemRock_Tick:
+  Skills:
+  - particle{p=block;m=stone;a=4;hs=0.15;vs=0.15} @origin
+GolemRock_Hit:
+  Skills:
+  - damage{a=6}
+  - throw{v=0.8;vy=0.4}
+GolemRock_End:
+  Skills:
+  - sound{s=block.stone.break;p=0.8} @origin
+  - particle{p=block;m=stone;a=20;hs=0.4;vs=0.4} @origin
+
+GolemEnrage:
+  Cooldown: 999
+  Skills:
+  - tint{color=FF5050;duration=40} @self
+  - particle{p=flame;a=40;hs=0.6;vs=1;s=0.02;y=1} @self
+  - potion{type=speed;duration=600;level=2} @self
+  - message{m="&c[골렘] &f분노했다!"} @PlayersInRadius{r=20}

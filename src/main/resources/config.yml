@@ -1,0 +1,34 @@
+# BlueMoon 설정
+# 모델: plugins/BlueMoon/models/*.bbmodel (블록벤치 "Generic Model" 형식 권장)
+# 몹:   plugins/BlueMoon/mobs/*.yml
+# 스킬: plugins/BlueMoon/skills/*.yml
+# 서버 시작 / /bm reload 때 plugins/BlueMoon/resourcepack.zip 이 자동 생성됩니다.
+
+resource-pack:
+  # 1.21.4 = 46. 이 범위 밖의 클라이언트는 "호환되지 않음" 경고를 봅니다.
+  min-format: 46
+  max-format: 99
+  description: "BlueMoon models"
+  # 내장 HTTP 서버로 리소스팩을 배포합니다 (접속 시 자동 전송).
+  # 끄고 resourcepack.zip 을 server.properties 의 resource-pack 으로 직접 배포해도 됩니다.
+  server:
+    enabled: false
+    bind: 0.0.0.0
+    port: 8163
+    # 플레이어가 접속할 수 있는 주소 (서버 공인 IP 또는 도메인)
+    public-url: "http://127.0.0.1:8163"
+    required: false
+    prompt: "&b커스텀 몹 모델 리소스팩을 적용해 주세요."
+
+model:
+  # 디스플레이 엔티티 시야 거리 배율 (1.0 = 기본)
+  view-range: 1.0
+  # 본 회전 보간 틱 (매 틱 갱신하므로 1 권장)
+  interpolation-ticks: 1
+  # 위치 이동 보간 틱
+  teleport-ticks: 2
+  # 애니메이션 전환 시 섞이는 시간(틱)
+  fade-ticks: 3
+  # 피격 시 모델 색
+  hurt-tint: "FF7070"
+  hurt-tint-ticks: 6

@@ -1,0 +1,37 @@
+# MythicMobs 와 같은 형식입니다. Model 항목으로 블록벤치 모델을 붙입니다.
+StoneGolem:
+  Type: ZOMBIE                 # 히트박스/AI 로 쓰일 바닐라 몹 (투명 처리됨)
+  Display: '&7돌 골렘'
+  Health: 150
+  Damage: 8
+  Armor: 4
+  MovementSpeed: 0.22
+  KnockbackResistance: 0.8
+  FollowRange: 24
+  Model:
+    Id: golem                  # models/golem.bbmodel
+    Scale: 1.0
+  # 상태 → 블록벤치 애니메이션 이름 (생략하면 같은 이름을 찾습니다)
+  Animations:
+    idle: idle
+    walk: walk
+    attack: attack
+    hurt: hurt
+    death: death
+    spawn: spawn
+  Options:
+    Silent: true
+    PreventSunburn: true
+    Despawn: false
+    ShowNameplate: false
+  Drops:
+  - cobblestone 2-5
+  - iron_ingot 1-2 0.5
+  - exp 20
+  Skills:
+  - skill{s=GolemSlam} @target ~onTimer:100 ?~distance{max=5}
+  - skill{s=GolemRock} @target ~onTimer:70 ?~distance{min=6;max=24}
+  - skill{s=GolemEnrage} ~onDamaged ?healthpercent{max=0.5}
+  - sound{s=entity.iron_golem.hurt;p=0.7} @self ~onDamaged
+  - sound{s=entity.iron_golem.death;p=0.7} @self ~onDeath
+  - message{m="&7[골렘] &f...침입자."} @PlayersInRadius{r=16} ~onSpawn
