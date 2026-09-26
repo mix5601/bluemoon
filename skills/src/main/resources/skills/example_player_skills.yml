@@ -1,0 +1,43 @@
+# 플레이어 스킬 예제
+# 발동: /bms cast <스킬> [플레이어]  또는  BlueMoonSkills.get().cast(player, "MoonSlash")
+# 타겟:  플레이어에게는 @target 이 없는 경우가 많으니 @crosshair (조준점) 를 쓰세요.
+
+# 1) 이펙트 모델: 초승달 검기. 피해는 slash.bbmodel 의 swing 애니메이션 타임라인(0.1초)에서 들어갑니다.
+MoonSlash:
+  Cooldown: 1.5
+  Skills:
+  - modeleffect{m=slash;a=swing;f=1.4;y=1.1}
+  - sound{s=entity.player.attack.sweep;p=1.3} @self
+
+# 2) 투사체 모델: 조준점으로 날아가는 화염구
+Fireball:
+  Cooldown: 4
+  Skills:
+  - sound{s=entity.blaze.shoot} @self
+  - projectile{model=fireball;anim=spin;v=22;hr=1;md=40;syo=1.4;onTick=Fireball_Tick;onHit=Fireball_Hit;onEnd=Fireball_End} @crosshair{r=40}
+Fireball_Tick:
+  Skills:
+  - particle{p=flame;a=3;hs=0.1;vs=0.1} @origin
+Fireball_Hit:
+  Skills:
+  - damage{a=10}
+  - ignite{ticks=60}
+Fireball_End:
+  Skills:
+  - particle{p=explosion;a=1} @origin
+  - sound{s=entity.generic.explode;v=0.8;p=1.2} @origin
+  - damage{a=4} @EntitiesNearOrigin{r=3}
+
+# 3) 소환수: 영혼 늑대 (최대 2마리, 30초)
+SummonWolf:
+  Cooldown: 10
+  Skills:
+  - summon{type=SpiritWolf;max=2;duration=600} @forward{f=2}
+  - particle{p=soul;a=30;hs=0.5;vs=0.5;y=0.5} @forward{f=2}
+
+# 4) 돌진 베기: 검기 이펙트가 플레이어를 따라가며(follow) 경로의 적을 벱니다.
+MoonDash:
+  Cooldown: 6
+  Skills:
+  - lunge{v=1.6;vy=0.25} @crosshair{r=12}
+  - modeleffect{m=slash;a=swing;f=0.8;y=1;follow=true} @self

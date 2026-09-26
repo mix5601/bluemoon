@@ -1,6 +1,14 @@
 # BlueMoon
 
-블록벤치(Blockbench) 모델을 그대로 불러와 **미스틱몹(MythicMobs) 스타일 스킬**로 움직이는 Paper 플러그인입니다.
+블록벤치(Blockbench) 모델을 그대로 불러와 **미스틱몹(MythicMobs) 스타일 스킬**로 움직이는 Paper 플러그인 모음입니다.
+
+| 플러그인 | 용도 | 문서 |
+| --- | --- | --- |
+| **BlueMoon** | 블록벤치 모델 커스텀 몹 + 몹 스킬 | 이 문서 |
+| **BlueMoonSkills** | 플레이어 스킬 (이펙트 모델, 소환수, 무기 모델) | [skills/README.md](skills/README.md) |
+
+두 플러그인은 서로 독립적이며, 공통 엔진(`core`)을 각자 jar 안에 포함합니다.
+
 ModelEngine 같은 별도 모델 플러그인 없이, `.bbmodel` 파일을 폴더에 넣으면 리소스팩 생성 → 디스플레이 엔티티 렌더링 → 애니메이션 → 스킬 실행까지 한 번에 처리합니다.
 
 - `.bbmodel` 직접 읽기 (큐브, 그룹(본), 로케이터, 내장 텍스처, 애니메이션, Molang 키프레임)
@@ -23,10 +31,11 @@ ModelEngine 같은 별도 모델 플러그인 없이, `.bbmodel` 파일을 폴�
 
 ```bash
 ./gradlew build
-# build/libs/BlueMoon-0.1.0.jar
+# bluemoon/build/libs/BlueMoon-<버전>.jar
+# skills/build/libs/BlueMoonSkills-<버전>.jar
 ```
 
-GitHub Actions(`.github/workflows/build.yml`)가 푸시마다 빌드하고 jar 를 아티팩트로 올립니다.
+GitHub Actions(`.github/workflows/build.yml`)가 푸시마다 빌드하고 두 jar 를 `plugins` 아티팩트로 올립니다.
 
 ## 빠르게 써 보기
 
@@ -147,6 +156,7 @@ GolemRock:
 
 - 타겟터가 없는 라인은 부모 `skill{}` 에서 **상속된 타겟**을 쓰고, 없으면 메카닉 기본 타겟터를 씁니다.
 - 모델 메카닉(`animation`, `tint` 등)은 상속 타겟을 무시하고 시전자에게 적용됩니다.
+- `damage`, `ignite`, `throw`, `pull` 은 시전자의 아군(주인·소환수)을 건너뜁니다.
 - 플레이스홀더: `<caster.name>`, `<target.name>`, `<trigger.name>`, `<caster.hp>`, `<caster.mhp>`, `<target.x>` ...
 - 색 코드: `&c`, `&l` ...
 
@@ -159,7 +169,7 @@ GolemRock:
 | `ignite` | `ticks/t` | @target |
 | `potion` | `type/t`, `duration/d`(틱), `level/l`(1부터), `particles`, `icon` | @self |
 | `lightning` / `effect:lightning` | – (effect 는 연출만) | @target |
-| `summon` | `type/t`(바닐라 또는 BlueMoon 몹), `amount/a`, `radius/r` | @selflocation |
+| `summon` | `type/t`(바닐라 또는 BlueMoon 몹), `amount/a`, `radius/r`, `owner`(기본 true), `duration`, `max` | @selflocation |
 | `command` (`cmd`) | `c` (콘솔 실행, 플레이스홀더 가능) | @self |
 | `remove` | – | @self |
 | `particle` (`effect:particle`, `e:p`) | `p`, `a`, `hs`, `vs`, `s`, `y`, `color`, `size`, `m`(블록 파티클 재질) | @self |
@@ -177,12 +187,13 @@ GolemRock:
 | `teleport` (`tp`) | – | @target |
 | `skill` (`metaskill`, `skill:이름`) | `s` | 상속 |
 | `randomskill` | `skills=A,B,C` | 상속 |
-| `projectile` | `onStart`, `onTick`, `onHit`, `onEnd`, `v`(블록/초), `i`, `hr`, `md`, `syo`, `tyo`, `g`, `sb`, `hp`, `hnp`, `pierce` | @target |
+| `projectile` | `onStart`, `onTick`, `onHit`, `onEnd`, `v`(블록/초), `i`, `hr`, `md`, `syo`, `tyo`, `g`, `sb`, `hp`, `hnp`, `pierce`, `model`, `anim`, `modelscale` | @target |
 | `model` | `mid`, `scale`, `remove` | @self |
 | `animation` (`anim`, `state`) | `a`, `speed`, `mode=once/loop/hold`, `fadein`, `fadeout`, `priority`, `restart` | @self |
 | `stopanimation` (`stopanim`) | `a` (`*` = 전부), `fadeout` | @self |
 | `tint` | `color`(hex), `duration`(틱, 0=유지) | @self |
 | `bonevisibility` | `bone`, `visible` | @self |
+| `modeleffect` (`vfx`) | `m`, `a`, `speed`, `mode`, `d`, `f`, `y`, `side`, `yaw`, `pitch`, `follow`, `scale`, `bright` — [자세히](skills/README.md#이펙트-모델-modeleffect-별칭-vfx) | @self |
 
 ### 타겟터
 
@@ -191,6 +202,9 @@ GolemRock:
 | `@self` `@caster` | 시전자 |
 | `@target` | 몹의 현재 공격 대상 (플레이어가 시전하면 바라보는 엔티티) |
 | `@trigger` | 스킬을 발동시킨 엔티티 |
+| `@owner` | 소환수의 주인 |
+| `@summons` | 시전자의 소환수 전부 |
+| `@Crosshair{r;entities}` (`@aim`) | 시전자가 조준하는 지점 (처음 맞는 엔티티/블록, 없으면 사거리 끝) |
 | `@PlayersInRadius{r}` `@PIR` | 반경 내 플레이어 |
 | `@EntitiesInRadius{r}` `@EIR` | 반경 내 생물 (시전자 제외) |
 | `@MobsInRadius{r;types}` `@MIR` | 반경 내 BlueMoon 몹 |
@@ -226,16 +240,22 @@ GolemRock:
 ## 구조
 
 ```
-src/main/java/dev/bluemoon
+core/      공통 엔진 (두 플러그인 jar 에 포함)
+bluemoon/  몹 플러그인 (BlueMoon)
+skills/    플레이어 스킬 플러그인 (BlueMoonSkills)
+
+core/src/main/java/dev/bluemoon
+├── BlueMoonPlugin    공통 플러그인 뼈대
 ├── model/bbmodel     .bbmodel 파서
 ├── model/molang      Molang 식 계산기
 ├── model/animation   키프레임 샘플링, 애니메이션 레이어, 본 행렬 계산
-├── model/pack        리소스팩 생성 / HTTP 배포
+├── model/pack        리소스팩 생성 / 무기 모델 / HTTP 배포
+├── model/effect      스킬 이펙트 모델
 ├── model/runtime     본 블루프린트, ItemDisplay 모델 인스턴스
 ├── skill             스킬 라인 컴파일/실행, 타겟터, 조건
 ├── skill/mechanics   메카닉 구현
 ├── mob               몹 정의, 활성 몹, 이벤트 → 트리거
-└── command           /bm
+└── command           공통 명령어
 ```
 
 좌표 변환: 본 행렬은 블록벤치 미리보기와 같은 방식(ZYX 오일러, 애니메이션 X/Y 회전과 X 위치 부호 반전)으로 계산하고, 아이템 디스플레이가 아이템을 Y축 180° 돌려 그리는 점을 보정합니다.

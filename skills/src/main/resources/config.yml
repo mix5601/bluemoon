@@ -1,0 +1,33 @@
+# BlueMoonSkills 설정
+# 이펙트/소환수 모델: plugins/BlueMoonSkills/models/*.bbmodel
+# 무기 모델:          plugins/BlueMoonSkills/weapons/*.bbmodel  (Java Block/Item 형식 권장)
+# 소환수:             plugins/BlueMoonSkills/summons/*.yml
+# 스킬:               plugins/BlueMoonSkills/skills/*.yml
+# 서버 시작 / /bms reload 때 plugins/BlueMoonSkills/resourcepack.zip 이 생성됩니다.
+#
+# 스킬 발동: /bms cast <스킬> <플레이어>  (콘솔/다른 플러그인에서 실행 가능)
+#            또는 자바 API  BlueMoonSkills.get().cast(player, "스킬")
+
+messages:
+  show-cooldown: true
+  cooldown: "&c<skill> &7재사용 대기 &f<remaining>초"
+
+resource-pack:
+  min-format: 46
+  max-format: 99
+  description: "BlueMoonSkills models"
+  server:
+    enabled: false
+    bind: 0.0.0.0
+    port: 8164
+    public-url: "http://127.0.0.1:8164"
+    required: false
+    prompt: "&b스킬 이펙트 리소스팩을 적용해 주세요."
+
+model:
+  view-range: 1.0
+  interpolation-ticks: 1
+  teleport-ticks: 2
+  fade-ticks: 3
+  hurt-tint: "FF7070"
+  hurt-tint-ticks: 6

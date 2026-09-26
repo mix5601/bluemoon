@@ -1,0 +1,16 @@
+name: BlueMoonSkills
+version: '${version}'
+main: dev.bluemoon.skills.BlueMoonSkills
+api-version: '1.21'
+description: 블록벤치 이펙트/소환수/무기 모델을 쓰는 미스틱몹 스타일 플레이어 스킬
+authors: [mix5601]
+commands:
+  bmskills:
+    description: BlueMoonSkills 명령어
+    aliases: [bms]
+    permission: bmskills.admin
+    usage: /<command> [reload|cast|weapon|dismiss|list|pack]
+permissions:
+  bmskills.admin:
+    description: BlueMoonSkills 관리 명령어 사용
+    default: op

@@ -1,0 +1,26 @@
+# 소환수 정의 (몹과 같은 형식 + Summon 섹션)
+# 스킬에서 summon{type=SpiritWolf} 로 부르면 시전자의 소환수가 됩니다.
+SpiritWolf:
+  Type: WOLF
+  Display: '&b영혼 늑대'
+  Health: 30
+  Damage: 5
+  MovementSpeed: 0.38
+  FollowRange: 20
+  Model:
+    Id: spirit_wolf
+    Scale: 1.0
+  Summon:
+    Duration: 600          # 지속 시간(틱). 0 = 주인이 나갈 때까지
+    FollowOwner: true      # 주인을 따라다님
+    FollowDistance: 5
+    TeleportDistance: 24
+    AssistOwner: true      # 주인이 때리거나 맞은 대상을 공격
+  Options:
+    Silent: true
+    ShowNameplate: false
+  Skills:
+  - particle{p=soul_fire_flame;a=2;hs=0.2;vs=0.1;y=0.6} @self ~onTimer:10
+  - sound{s=entity.wolf.growl;p=1.4} @self ~onAttack
+  - particle{p=soul;a=20;hs=0.4;vs=0.4;y=0.5} @self ~onSpawn
+  - message{m="&b영혼 늑대가 곁에 나타났다."} @owner ~onSpawn
