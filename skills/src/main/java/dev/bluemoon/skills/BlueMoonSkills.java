@@ -52,15 +52,30 @@ public final class BlueMoonSkills extends BlueMoonPlugin {
                 "models/slash.bbmodel",
                 "models/fireball.bbmodel",
                 "models/spirit_wolf.bbmodel",
+                "models/star_slash.bbmodel",
+                "models/wither_vortex.bbmodel",
+                "models/radiant_skull.bbmodel",
                 "weapons/moon_sword.bbmodel",
+                "weapons/star_greatsword.bbmodel",
+                "weapons/star_greatsword.yml",
                 "summons/example_summons.yml",
-                "skills/example_player_skills.yml");
+                "skills/example_player_skills.yml",
+                "skills/star_greatsword_skills.yml");
     }
 
     @Override
     protected void setup() {
         instance = this;
         weapons = new WeaponManager(this);
+        WeaponListener listener = new WeaponListener(this);
+        getServer().getPluginManager().registerEvents(listener, this);
+        getServer().getScheduler().runTaskTimer(this, listener::tick, 1L, 1L);
+        // ?holding{weapon=star_greatsword}: the player holds that weapon in the main hand
+        skills().registerCondition(p -> {
+            String id = p.getString("", "weapon", "w", "id");
+            return (meta, e) -> e instanceof Player pl
+                    && id.equalsIgnoreCase(weapons.weaponOf(pl.getInventory().getItemInMainHand()));
+        }, "holding", "holdingweapon");
     }
 
     @Override
@@ -188,7 +203,7 @@ public final class BlueMoonSkills extends BlueMoonPlugin {
                 command.send(sender, "&c받을 플레이어를 찾을 수 없습니다.");
                 return;
             }
-            Material base = Material.NETHERITE_SWORD;
+            Material base = weapons.type(args[1]).material();
             if (args.length > 3) {
                 Material m = Material.matchMaterial(args[3]);
                 if (m == null || !m.isItem()) {
@@ -199,7 +214,7 @@ public final class BlueMoonSkills extends BlueMoonPlugin {
             }
             player.getInventory().addItem(weapons.item(args[1], base));
             command.send(sender, player.getName() + " 에게 무기 '" + args[1] + "' 지급 (아이템 모델 "
-                    + weapons.modelKey(args[1]) + ")");
+                    + weapons.modelKey(weapons.type(args[1]).model()) + ")");
         }, (sender, args) -> {
             if (args.length == 2) {
                 return new ArrayList<>(weapons.ids());

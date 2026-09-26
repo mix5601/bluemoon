@@ -19,6 +19,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.potion.PotionEffectTypeCategory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -161,9 +162,13 @@ final class CombatMechanics {
 
         @Override
         public void castEntity(SkillMeta meta, Entity target) {
-            if (target instanceof LivingEntity le) {
-                le.addPotionEffect(new PotionEffect(type, duration, level - 1, false, particles, icon));
+            if (!(target instanceof LivingEntity le)) {
+                return;
             }
+            if (type.getCategory() == PotionEffectTypeCategory.HARMFUL && friendly(meta, target)) {
+                return;
+            }
+            le.addPotionEffect(new PotionEffect(type, duration, level - 1, false, particles, icon));
         }
     }
 
@@ -297,6 +302,21 @@ final class CombatMechanics {
                 am.removeModel();
             }
             target.remove();
+        }
+    }
+
+    /** {@code invulnerable{ticks=10}}: the target ignores all damage for a while (dodge i-frames). */
+    static final class Invulnerable extends Mechanic {
+        private final int ticks;
+
+        Invulnerable(Params p) {
+            super(p);
+            ticks = p.getInt(10, "ticks", "t", "duration", "d");
+        }
+
+        @Override
+        public void castEntity(SkillMeta meta, Entity target) {
+            meta.plugin.skills().setInvulnerable(target, ticks);
         }
     }
 }

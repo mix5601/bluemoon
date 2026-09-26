@@ -1,6 +1,6 @@
 package dev.bluemoon.skill.mechanics;
 
-import dev.bluemoon.skill.SkillManager;
+import dev.bluemoon.skill.SkillRegistry;
 
 /** Registers every built-in mechanic with its MythicMobs style aliases. */
 public final class BuiltinMechanics {
@@ -13,7 +13,7 @@ public final class BuiltinMechanics {
         return CombatMechanics.isSkillDamage();
     }
 
-    public static void register(SkillManager m) {
+    public static void register(SkillRegistry m) {
         // combat
         m.registerMechanic(CombatMechanics.Damage::new, "damage", "d");
         m.registerMechanic(CombatMechanics.Heal::new, "heal");
@@ -24,6 +24,7 @@ public final class BuiltinMechanics {
         m.registerMechanic(CombatMechanics.Summon::new, "summon");
         m.registerMechanic(CombatMechanics.Command::new, "command", "cmd");
         m.registerMechanic(CombatMechanics.Remove::new, "remove");
+        m.registerMechanic(CombatMechanics.Invulnerable::new, "invulnerable", "iframes");
 
         // effects
         m.registerMechanic(EffectMechanics.ParticleEffect::new, "particle", "effect:particle", "e:p");
@@ -45,6 +46,7 @@ public final class BuiltinMechanics {
         // meta
         m.registerMechanic(MetaMechanics.SkillCall::new, "skill", "metaskill", "meta");
         m.registerMechanic(MetaMechanics.RandomSkill::new, "randomskill");
+        m.registerMechanic(MetaMechanics.Repeat::new, "repeat");
         m.registerMechanic(MetaMechanics.Projectile::new, "projectile");
 
         // blockbench model

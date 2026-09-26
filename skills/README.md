@@ -117,12 +117,79 @@ SpiritWolf:
   - 다른 플러그인에서 `item_model` 컴포넌트로 직접 지정해도 됩니다.
 - 지급된 아이템에는 `bmskills:weapon` 태그로 무기 이름이 저장됩니다. 무기별 스킬 발동에 활용하세요.
 
+### 무기 정의 (`weapons/*.yml`)
+
+무기 모델에 이름·설명·능력치와 **자동 스킬**(들고 있을 때 저절로 발동)을 붙입니다.
+액티브 스킬의 발동 방식은 여전히 직접 연결합니다.
+
+```yaml
+star_greatsword:
+  Model: star_greatsword        # weapons/star_greatsword.bbmodel
+  Material: NETHERITE_SWORD
+  Display: '&d&l네더의 별 대검'
+  Lore:
+  - '&5◆ 쇠락 &7공격한 대상에게 위더를 건다'
+  Attributes:
+    AttackDamage: 11            # 최종 공격력
+    AttackSpeed: 0.9            # 초당 공격 횟수
+  Skills:                       # 쓸 수 있는 트리거: ~onAttack ~onDamaged ~onCombat ~onKill ~onTimer:틱
+  - potion{type=wither;duration=40} @trigger ~onAttack ?~!undead
+  - skill{s=RadiantSkulls} @trigger ~onAttack 0.25
+```
+
+액티브 스킬에 `Conditions: - holding{weapon=star_greatsword}` 를 넣으면 그 무기를 들고 있을 때만 쓸 수 있습니다.
+
+## 예제 무기 세트: 네더의 별 대검
+
+전달해 주신 MCModels "Forged Weaponry" 시리즈의 구성을 참고해 새로 만든 세트입니다(모델·스킬 모두 자체 제작).
+구성은 **기본공격 효과 + 자동 스킬 1개 + 액티브 스킬 2개**이고, 무기마다 속성 테마와 설명(lore)을 둡니다.
+테마는 **빛(언데드 추가 피해) + 쇠락(위더)** 입니다.
+
+| 스킬 | 종류 | 동작 | 사용 모델 |
+| --- | --- | --- | --- |
+| 쇠락 | 기본공격 | 때린 대상에게 위더 (언데드는 면역이라 제외) | – |
+| 광휘의 해골 | 자동 (공격 시 25%) | 머리 위에서 추적 해골 3발, 언데드 추가 피해 | `radiant_skull` |
+| 별빛 참격 `StarSlash` | 액티브 | 짧게 전진하며 초승달 참격. 피해는 모델 타임라인 0.12초에 들어감 | `star_slash` |
+| 위더 폭풍 `WitherTempest` | 액티브 | 조준한 지면에 5초 소용돌이. 0.5초마다 끌어당김·위더, 끝에 폭발 | `wither_vortex` |
+
+```
+/bms weapon star_greatsword
+/bms cast StarSlash
+/bms cast WitherTempest
+```
+
+참고 자료에 있던 다른 요소들도 쓸 수 있게 넣어 두었습니다.
+
+| 참고한 요소 | 이 플러그인에서 |
+| --- | --- |
+| 회피 무적 시간 (Dodge Dagger) | `invulnerable{ticks=8}` + `lunge` |
+| 백스탭 (Dodge Dagger) | `?~behind{angle=90}` 조건 |
+| 바닥에 남는 장판 (Netherite Crucible) | `repeat{s=Pool;times=10;i=10} @crosshair{ground=true}` + 반복 애니메이션 `modeleffect` |
+| 음파/해골 투사체 (Sculk, Nether Star) | `projectile{model=...;homing=0.25}` |
+| 커스텀 파티클 | 블록벤치 이펙트 모델 (`modeleffect`) |
+| 커스텀 사운드 | `pack-extra/assets/.../sounds.json` + `sound{s=네임스페이스:이름}` |
+
+### 추가 메카닉/옵션
+
+| 이름 | 설명 |
+| --- | --- |
+| `repeat{s;times;i}` | 메타스킬을 i틱 간격으로 times번 실행 (장판, 채널링) |
+| `invulnerable{ticks}` | 대상이 잠시 모든 피해를 무시 (회피 무적 시간) |
+| `projectile{homing=0~1;so=옆오프셋}` | 유도 투사체, 좌우 발사 위치 |
+| `pull{toorigin=true}` / `throw{fromorigin=true}` | 원점(장판 중심) 기준으로 끌어당기기/밀어내기 |
+| `@crosshair{ground=true}` | 조준점을 바닥으로 내림 |
+| `?undead` | 언데드 (좀비·스켈레톤·위더 등) |
+| `?behind{angle}` | 대상이 시전자에게 등을 보임 (백스탭) |
+| `?holding{weapon}` | 해당 무기를 들고 있음 |
+
+`skill{}` / `repeat{}` 을 위치 하나(예: `@crosshair`)로 부르면, 그 위치가 불린 스킬의 `@Origin` 이 됩니다.
+
 ## 명령어 (`/bmskills`, `/bms`, 권한 `bmskills.admin`)
 
 | 명령어 | 설명 |
 | --- | --- |
 | `/bms cast <스킬> [플레이어] [-s]` | 스킬 사용 |
-| `/bms weapon <무기> [플레이어] [재질]` | 무기 아이템 지급 |
+| `/bms weapon <무기> [플레이어] [재질]` | 무기 아이템 지급 (yml 의 이름/설명/능력치 포함) |
 | `/bms dismiss [플레이어]` | 소환수 해제 |
 | `/bms list [skills\|models\|mobs]` | 목록 (`mobs` = 소환수 종류) |
 | `/bms reload` | 전체 다시 불러오기 + 리소스팩 재생성 |

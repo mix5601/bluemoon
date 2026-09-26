@@ -156,7 +156,8 @@ GolemRock:
 
 - 타겟터가 없는 라인은 부모 `skill{}` 에서 **상속된 타겟**을 쓰고, 없으면 메카닉 기본 타겟터를 씁니다.
 - 모델 메카닉(`animation`, `tint` 등)은 상속 타겟을 무시하고 시전자에게 적용됩니다.
-- `damage`, `ignite`, `throw`, `pull` 은 시전자의 아군(주인·소환수)을 건너뜁니다.
+- `damage`, `ignite`, `throw`, `pull`, 해로운 `potion` 은 시전자의 아군(주인·소환수)을 건너뜁니다.
+- `skill{}`/`repeat{}` 을 위치 하나로 부르면 그 위치가 불린 스킬의 `@Origin` 이 됩니다.
 - 플레이스홀더: `<caster.name>`, `<target.name>`, `<trigger.name>`, `<caster.hp>`, `<caster.mhp>`, `<target.x>` ...
 - 색 코드: `&c`, `&l` ...
 
@@ -179,15 +180,17 @@ GolemRock:
 | `message` (`msg`) | `m` | @trigger |
 | `actionmessage` (`actionbar`) | `m` | @trigger |
 | `sendtitle` (`title`) | `title`, `subtitle`, `fadein`, `stay`, `fadeout` | @trigger |
-| `throw` | `v`, `vy` (블록/틱) | @target |
-| `pull` | `v` | @target |
+| `throw` | `v`, `vy` (블록/틱), `fromorigin` | @target |
+| `pull` | `v`, `toorigin` | @target |
 | `leap` (`jump`) | `vy`, `v`(최대 수평 속도) | @target |
 | `lunge` | `v`, `vy` | @target |
 | `velocity` | `mode=set/add/multiply`, `x`, `y`, `z` | @self |
 | `teleport` (`tp`) | – | @target |
 | `skill` (`metaskill`, `skill:이름`) | `s` | 상속 |
 | `randomskill` | `skills=A,B,C` | 상속 |
-| `projectile` | `onStart`, `onTick`, `onHit`, `onEnd`, `v`(블록/초), `i`, `hr`, `md`, `syo`, `tyo`, `g`, `sb`, `hp`, `hnp`, `pierce`, `model`, `anim`, `modelscale` | @target |
+| `repeat` | `s`, `times`, `i`(틱) — 같은 타겟/원점으로 반복 실행 | 상속 |
+| `invulnerable` (`iframes`) | `ticks` — 잠시 모든 피해 무시 | @self |
+| `projectile` | `onStart`, `onTick`, `onHit`, `onEnd`, `v`(블록/초), `i`, `hr`, `md`, `syo`, `tyo`, `g`, `sb`, `hp`, `hnp`, `pierce`, `model`, `anim`, `modelscale`, `homing`(0~1), `so`(옆 오프셋) | @target |
 | `model` | `mid`, `scale`, `remove` | @self |
 | `animation` (`anim`, `state`) | `a`, `speed`, `mode=once/loop/hold`, `fadein`, `fadeout`, `priority`, `restart` | @self |
 | `stopanimation` (`stopanim`) | `a` (`*` = 전부), `fadeout` | @self |
@@ -204,7 +207,7 @@ GolemRock:
 | `@trigger` | 스킬을 발동시킨 엔티티 |
 | `@owner` | 소환수의 주인 |
 | `@summons` | 시전자의 소환수 전부 |
-| `@Crosshair{r;entities}` (`@aim`) | 시전자가 조준하는 지점 (처음 맞는 엔티티/블록, 없으면 사거리 끝) |
+| `@Crosshair{r;entities;ground}` (`@aim`) | 시전자가 조준하는 지점 (처음 맞는 엔티티/블록, 없으면 사거리 끝, `ground=true` 면 바닥으로) |
 | `@PlayersInRadius{r}` `@PIR` | 반경 내 플레이어 |
 | `@EntitiesInRadius{r}` `@EIR` | 반경 내 생물 (시전자 제외) |
 | `@MobsInRadius{r;types}` `@MIR` | 반경 내 BlueMoon 몹 |
@@ -219,7 +222,7 @@ GolemRock:
 
 ### 조건
 
-`chance{c}`, `healthpercent{min;max}`(0~1), `health{min;max}`, `hastarget`, `isplayer`, `onground`, `distance{min;max}`, `day`, `night`, `raining`, `entitytype{types}`, `mobtype{types}`, `playinganimation{a}`, `lineofsight`
+`chance{c}`, `healthpercent{min;max}`(0~1), `health{min;max}`, `hastarget`, `isplayer`, `onground`, `distance{min;max}`, `day`, `night`, `raining`, `entitytype{types}`, `mobtype{types}`, `playinganimation{a}`, `lineofsight`, `undead`, `behind{angle}`, `holding{weapon}`(BlueMoonSkills)
 
 ### 트리거
 

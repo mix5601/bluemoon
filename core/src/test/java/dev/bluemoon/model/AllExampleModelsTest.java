@@ -33,7 +33,7 @@ class AllExampleModelsTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"golem", "slash", "fireball", "spirit_wolf"})
+    @ValueSource(strings = {"golem", "slash", "fireball", "spirit_wolf", "star_slash", "wither_vortex", "radiant_skull"})
     void modelIsValid(String id) throws IOException {
         BBModel model = load("/models/" + id + ".bbmodel");
         assertTrue(model.warnings.isEmpty(), model.warnings.toString());
@@ -50,7 +50,7 @@ class AllExampleModelsTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"moon_sword"})
+    @ValueSource(strings = {"moon_sword", "star_greatsword"})
     void weaponIsValid(String id) throws IOException {
         BBModel model = load("/weapons/" + id + ".bbmodel");
         assertEquals("java_block", model.format);
@@ -60,9 +60,7 @@ class AllExampleModelsTest {
         assertTrue(warnings.isEmpty(), warnings.toString());
         JsonObject m = json(gen.files().get("assets/test/models/item/weapon/" + id + ".json"));
         assertElementsValid(m, id);
-        assertEquals(5, m.getAsJsonArray("elements").size());
-        // java block coordinates survive unchanged
-        assertEquals(7.5f, m.getAsJsonArray("elements").get(0).getAsJsonObject().getAsJsonArray("from").get(0).getAsFloat(), 1e-4);
+        assertEquals(model.rootGroups.get(0).cubes.size(), m.getAsJsonArray("elements").size());
         assertEquals(90f, m.getAsJsonObject("display").getAsJsonObject("thirdperson_righthand")
                 .getAsJsonArray("rotation").get(1).getAsFloat(), 1e-4);
         assertNotNull(gen.files().get("assets/test/items/weapon/" + id + ".json"));

@@ -1,0 +1,27 @@
+# 무기 정의: 아이템 모양/이름/설명/능력치 + 들고 있을 때 자동으로 도는 스킬
+# 액티브 스킬(StarSlash, WitherTempest)의 발동 방식은 직접 연결하세요:
+#   /bms cast StarSlash <플레이어>   또는   BlueMoonSkills.get().cast(player, "StarSlash")
+star_greatsword:
+  Model: star_greatsword          # weapons/star_greatsword.bbmodel
+  Material: NETHERITE_SWORD
+  Display: '&d&l네더의 별 대검'
+  Lore:
+  - '&8위더의 심장에서 벼려낸 대검.'
+  - '&8안에 깃든 순수한 빛은 언데드를 태우고,'
+  - '&8살아 있는 것은 시들게 한다.'
+  - ''
+  - '&5◆ 쇠락 &7공격한 대상에게 위더를 건다'
+  - '&e◆ 광휘의 해골 &8(자동) &7공격 시 25% 확률로 추적 해골 3발'
+  - '&d◆ 별빛 참격 &8(스킬) &7앞을 크게 베어 위더를 건다'
+  - '&d◆ 위더 폭풍 &8(스킬) &7조준한 곳에 적을 빨아들이는 폭풍'
+  - ''
+  - '&f언데드에게 추가 피해'
+  Attributes:
+    AttackDamage: 11
+    AttackSpeed: 0.9
+  Skills:
+  # 기본 공격: 쇠락 (언데드는 위더 면역이라 제외)
+  - potion{type=wither;duration=40;level=1} @trigger ~onAttack ?~!undead
+  - particle{p=smoke;a=6;hs=0.3;vs=0.3;y=1} @trigger ~onAttack
+  # 자동 스킬: 광휘의 해골
+  - skill{s=RadiantSkulls} @trigger ~onAttack 0.25

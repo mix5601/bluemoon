@@ -27,15 +27,17 @@ final class MovementMechanics {
         return Double.isFinite(v.getX()) && Double.isFinite(v.getY()) && Double.isFinite(v.getZ());
     }
 
-    /** {@code throw{v=1.5;vy=0.5}} knocks targets away from the caster. */
+    /** {@code throw{v=1.5;vy=0.5}} knocks targets away from the caster ({@code fromorigin=true}: from the origin). */
     static final class Throw extends Mechanic {
         private final double v;
         private final double vy;
+        private final boolean fromOrigin;
 
         Throw(Params p) {
             super(p);
             v = p.getDouble(1.5, "velocity", "v");
             vy = p.getDouble(0.5, "velocityy", "vy");
+            fromOrigin = p.getBoolean(false, "fromorigin", "fo");
         }
 
         @Override
@@ -48,20 +50,23 @@ final class MovementMechanics {
             if (target == meta.caster || CombatMechanics.friendly(meta, target)) {
                 return;
             }
-            Vector vel = horizontal(meta.casterLocation(), target.getLocation()).multiply(v).setY(vy);
+            Location from = fromOrigin ? meta.origin : meta.casterLocation();
+            Vector vel = horizontal(from, target.getLocation()).multiply(v).setY(vy);
             if (finite(vel)) {
                 target.setVelocity(vel);
             }
         }
     }
 
-    /** {@code pull{v=1}} pulls targets toward the caster. */
+    /** {@code pull{v=1}} pulls targets toward the caster ({@code toorigin=true}: toward the skill origin). */
     static final class Pull extends Mechanic {
         private final double v;
+        private final boolean toOrigin;
 
         Pull(Params p) {
             super(p);
             v = p.getDouble(1, "velocity", "v");
+            toOrigin = p.getBoolean(false, "toorigin", "to");
         }
 
         @Override
@@ -74,7 +79,8 @@ final class MovementMechanics {
             if (target == meta.caster || CombatMechanics.friendly(meta, target)) {
                 return;
             }
-            Vector dir = meta.casterLocation().toVector().subtract(target.getLocation().toVector());
+            Location center = toOrigin ? meta.origin : meta.casterLocation();
+            Vector dir = center.toVector().subtract(target.getLocation().toVector());
             double dist = dir.length();
             if (dist < 0.5) {
                 return;

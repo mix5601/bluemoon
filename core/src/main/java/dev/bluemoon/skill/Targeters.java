@@ -26,7 +26,7 @@ final class Targeters {
     private Targeters() {
     }
 
-    static void register(SkillManager m) {
+    static void register(SkillRegistry m) {
         m.registerTargeter(p -> meta -> Targets.of(meta.caster), "self", "caster", "boss", "mob", "me");
         m.registerTargeter(p -> meta -> Targets.of(currentTarget(meta.caster)), "target", "t");
         m.registerTargeter(p -> meta -> Targets.of(meta.trigger), "trigger");
@@ -91,7 +91,11 @@ final class Targeters {
         m.registerTargeter(p -> {
             double r = p.getDouble(32, "range", "r");
             boolean entities = p.getBoolean(true, "entities", "e");
-            return meta -> Targets.of(crosshair(meta.caster, r, entities));
+            boolean ground = p.getBoolean(false, "ground", "g");
+            return meta -> {
+                Location l = crosshair(meta.caster, r, entities);
+                return Targets.of(ground ? ground(l) : l);
+            };
         }, "crosshair", "aim", "lookat");
         m.registerTargeter(p -> {
             double f = p.getDouble(5, "forward", "f");
@@ -154,6 +158,20 @@ final class Targeters {
                 e -> entities && e != caster && e instanceof LivingEntity && e.isValid());
         Vector point = hit != null ? hit.getHitPosition() : eye.toVector().add(dir.multiply(range));
         return point.toLocation(eye.getWorld(), eye.getYaw(), eye.getPitch());
+    }
+
+    /** Drops a location onto the top of the first solid block below it (up to 32 blocks). */
+    static Location ground(Location l) {
+        Location at = l.clone();
+        int minY = at.getWorld().getMinHeight();
+        for (int y = at.getBlockY(); y >= Math.max(minY, at.getBlockY() - 32); y--) {
+            at.setY(y);
+            if (at.getBlock().getType().isSolid()) {
+                at.setY(y + 1);
+                return at;
+            }
+        }
+        return l;
     }
 
     static Entity currentTarget(Entity caster) {

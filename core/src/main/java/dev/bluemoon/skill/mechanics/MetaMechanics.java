@@ -29,6 +29,20 @@ final class MetaMechanics {
     private MetaMechanics() {
     }
 
+    /**
+     * Targets for a called metaskill. A single location target also becomes the origin, so
+     * {@code skill{s=Zone} @crosshair} can use {@code @Origin} / {@code @EntitiesNearOrigin}.
+     */
+    static SkillMeta inherit(SkillMeta meta, Targets targets, boolean explicit) {
+        SkillMeta next = explicit
+                ? meta.withTargets(targets.entities(), targets.locations())
+                : meta.withTargets(meta.inheritedEntities, meta.inheritedLocations);
+        if (next.inheritedEntities.isEmpty() && next.inheritedLocations.size() == 1) {
+            next = next.withOrigin(next.inheritedLocations.get(0));
+        }
+        return next;
+    }
+
     static void runSkill(SkillMeta meta, String name, SkillMeta withMeta) {
         if (name == null || name.isBlank()) {
             return;
@@ -55,10 +69,40 @@ final class MetaMechanics {
 
         @Override
         public void castTargets(SkillMeta meta, Targets targets, boolean explicit) {
-            SkillMeta next = explicit
-                    ? meta.withTargets(targets.entities(), targets.locations())
-                    : meta.withTargets(meta.inheritedEntities, meta.inheritedLocations);
-            runSkill(meta, skill, next);
+            runSkill(meta, skill, inherit(meta, targets, explicit));
+        }
+    }
+
+    /**
+     * {@code repeat{s=Pulse;times=5;i=10}} runs a metaskill several times, {@code i} ticks apart,
+     * with the same targets / origin (ground zones, channels, barrages).
+     */
+    static final class Repeat extends Mechanic implements TargetAwareMechanic {
+        private final String skill;
+        private final int times;
+        private final int interval;
+
+        Repeat(Params p) {
+            super(p);
+            skill = p.getString("", "skill", "s");
+            times = Math.max(1, p.getInt(3, "times", "repeat", "r"));
+            interval = Math.max(1, p.getInt(10, "interval", "i"));
+            if (skill.isBlank()) {
+                throw new IllegalArgumentException("repeat{} 에는 s=스킬이름 이 필요합니다");
+            }
+        }
+
+        @Override
+        public void castTargets(SkillMeta meta, Targets targets, boolean explicit) {
+            SkillMeta at = inherit(meta, targets, explicit);
+            int[] count = {0};
+            Bukkit.getScheduler().runTaskTimer(meta.plugin, task -> {
+                if (!meta.plugin.isEnabled() || !meta.casterAlive() || count[0]++ >= times) {
+                    task.cancel();
+                    return;
+                }
+                runSkill(meta, skill, at);
+            }, 0L, interval);
         }
     }
 
@@ -78,10 +122,7 @@ final class MetaMechanics {
         @Override
         public void castTargets(SkillMeta meta, Targets targets, boolean explicit) {
             String pick = skills.get(ThreadLocalRandom.current().nextInt(skills.size()));
-            SkillMeta next = explicit
-                    ? meta.withTargets(targets.entities(), targets.locations())
-                    : meta.withTargets(meta.inheritedEntities, meta.inheritedLocations);
-            runSkill(meta, pick, next);
+            runSkill(meta, pick, inherit(meta, targets, explicit));
         }
     }
 
@@ -107,6 +148,8 @@ final class MetaMechanics {
         private final boolean hitNonPlayers;
         private final boolean pierce;
         private final EffectManager.Spec modelSpec;
+        private final double homing;
+        private final double sideOffset;
 
         Projectile(Params p) {
             super(p);
@@ -125,6 +168,8 @@ final class MetaMechanics {
             hitPlayers = p.getBoolean(true, "hitplayers", "hp");
             hitNonPlayers = p.getBoolean(true, "hitnonplayers", "hnp");
             pierce = p.getBoolean(false, "pierce", "pi");
+            homing = Math.max(0, Math.min(1, p.getDouble(0, "homing", "ho")));
+            sideOffset = p.getDouble(0, "sideoffset", "so");
             String model = p.getString(null, "model", "m");
             if (model != null && !model.isBlank()) {
                 modelSpec = new EffectManager.Spec();
@@ -160,16 +205,19 @@ final class MetaMechanics {
 
         @Override
         public void castEntity(SkillMeta meta, Entity target) {
-            launch(meta, target.getLocation().add(0, target.getHeight() / 2 + targetYOffset, 0));
+            launch(meta, target.getLocation().add(0, target.getHeight() / 2 + targetYOffset, 0), target);
         }
 
         @Override
         public void castLocation(SkillMeta meta, Location target) {
-            launch(meta, target.add(0, targetYOffset, 0));
+            launch(meta, target.add(0, targetYOffset, 0), null);
         }
 
-        private void launch(SkillMeta meta, Location target) {
+        private void launch(SkillMeta meta, Location target, Entity homingTarget) {
             Location start = meta.casterLocation().add(0, startYOffset, 0);
+            if (sideOffset != 0) {
+                start.add(EffectModel.rotate(new Vector(sideOffset, 0, 0), start.getYaw()));
+            }
             World world = start.getWorld();
             if (world == null || !world.equals(target.getWorld())) {
                 return;
@@ -197,6 +245,17 @@ final class MetaMechanics {
             Bukkit.getScheduler().runTaskTimer(meta.plugin, task -> {
                 boolean ended = false;
                 for (int t = 0; t < interval && !ended; t++) {
+                    if (homing > 0 && homingTarget != null && homingTarget.isValid()
+                            && homingTarget.getWorld().equals(world)) {
+                        Vector desired = homingTarget.getLocation().add(0, homingTarget.getHeight() / 2, 0).toVector()
+                                .subtract(pos.toVector());
+                        if (desired.lengthSquared() > 1e-6) {
+                            double speed = motion.length();
+                            desired.normalize().multiply(speed);
+                            motion.add(desired.subtract(motion).multiply(homing));
+                            motion.normalize().multiply(speed);
+                        }
+                    }
                     motion.setY(motion.getY() - gravity / 20.0);
                     double stepLength = motion.length();
                     int subSteps = Math.max(1, (int) Math.ceil(stepLength / 0.5));

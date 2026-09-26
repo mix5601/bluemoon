@@ -44,6 +44,14 @@ public final class MobListener implements Listener {
         return damager;
     }
 
+    /** i-frames from the invulnerable mechanic. */
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onInvulnerable(EntityDamageEvent event) {
+        if (plugin.skills().isInvulnerable(event.getEntity())) {
+            event.setCancelled(true);
+        }
+    }
+
     /** Owners and their summons cannot hurt each other. */
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onFriendlyFire(EntityDamageByEntityEvent event) {

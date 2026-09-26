@@ -1,7 +1,6 @@
 package dev.bluemoon.skill;
 
 import dev.bluemoon.BlueMoonPlugin;
-import dev.bluemoon.skill.mechanics.BuiltinMechanics;
 import dev.bluemoon.skill.parse.Params;
 import dev.bluemoon.skill.parse.SkillLineParser;
 import dev.bluemoon.skill.parse.SkillLineParser.Component;
@@ -26,7 +25,7 @@ import java.util.UUID;
 import java.util.function.Function;
 
 /** Loads metaskills from {@code plugins/BlueMoon/skills} and compiles skill lines. */
-public final class SkillManager {
+public final class SkillManager implements SkillRegistry {
 
     private final BlueMoonPlugin plugin;
     private final Map<String, Function<Params, Mechanic>> mechanics = new HashMap<>();
@@ -35,27 +34,29 @@ public final class SkillManager {
     private final Map<String, Skill> skills = new LinkedHashMap<>();
     private final Map<String, Skill> scriptCache = new HashMap<>();
     private final Map<UUID, Map<String, Long>> cooldowns = new HashMap<>();
+    private final Map<UUID, Long> invulnerableUntil = new HashMap<>();
     private final List<String> errors = new ArrayList<>();
 
     public SkillManager(BlueMoonPlugin plugin) {
         this.plugin = plugin;
-        BuiltinMechanics.register(this);
-        Targeters.register(this);
-        Conditions.register(this);
+        SkillRegistry.registerBuiltins(this);
     }
 
+    @Override
     public void registerMechanic(Function<Params, Mechanic> factory, String... names) {
         for (String name : names) {
             mechanics.put(name.toLowerCase(Locale.ROOT), factory);
         }
     }
 
+    @Override
     public void registerTargeter(Function<Params, Targeter> factory, String... names) {
         for (String name : names) {
             targeters.put(name.toLowerCase(Locale.ROOT), factory);
         }
     }
 
+    @Override
     public void registerCondition(Function<Params, Condition> factory, String... names) {
         for (String name : names) {
             conditions.put(name.toLowerCase(Locale.ROOT), factory);
@@ -226,6 +227,22 @@ public final class SkillManager {
     public void setCooldown(Entity caster, String skill, double seconds) {
         cooldowns.computeIfAbsent(caster.getUniqueId(), k -> new HashMap<>())
                 .put(skill.toLowerCase(Locale.ROOT), System.currentTimeMillis() + (long) (seconds * 1000));
+    }
+
+    public void setInvulnerable(Entity entity, int ticks) {
+        invulnerableUntil.put(entity.getUniqueId(), System.currentTimeMillis() + ticks * 50L);
+    }
+
+    public boolean isInvulnerable(Entity entity) {
+        Long until = invulnerableUntil.get(entity.getUniqueId());
+        if (until == null) {
+            return false;
+        }
+        if (until < System.currentTimeMillis()) {
+            invulnerableUntil.remove(entity.getUniqueId());
+            return false;
+        }
+        return true;
     }
 
     public void clearCooldowns(UUID uuid) {

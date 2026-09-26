@@ -1,0 +1,70 @@
+# 네더의 별 대검 스킬 세트
+# 구성: 기본공격 효과(쇠락) + 자동 스킬 1개(광휘의 해골) + 액티브 스킬 2개(별빛 참격, 위더 폭풍)
+# 테마: 빛(언데드 추가 피해) + 쇠락(위더)
+
+# ── 액티브 1: 별빛 참격 ───────────────────────────────────────────────
+# 판정/피해는 models/star_slash.bbmodel 의 slash 애니메이션 타임라인(0.12초)에 들어 있습니다.
+StarSlash:
+  Cooldown: 3
+  Conditions:
+  - holding{weapon=star_greatsword}
+  Skills:
+  - lunge{v=0.45;vy=0.05} @forward{f=3}
+  - modeleffect{m=star_slash;a=slash;f=1.6;y=1.1}
+  - sound{s=entity.player.attack.sweep;p=0.7} @self
+  - sound{s=entity.wither.shoot;v=0.4;p=1.6} @self
+
+# ── 액티브 2: 위더 폭풍 ───────────────────────────────────────────────
+# 조준한 지면에 5초간 소용돌이. 0.5초마다 적을 끌어당기며 위더, 끝에 폭발.
+WitherTempest:
+  Cooldown: 14
+  Conditions:
+  - holding{weapon=star_greatsword}
+  Skills:
+  - sound{s=entity.wither.spawn;v=0.5;p=1.4} @self
+  - skill{s=WitherTempest_Zone} @crosshair{r=16;ground=true}
+WitherTempest_Zone:
+  Skills:
+  - modeleffect{m=wither_vortex;a=spin;mode=loop;d=100;yaw=none}
+  - repeat{s=WitherTempest_Pulse;times=10;i=10}
+  - delay 100
+  - skill{s=WitherTempest_Burst}
+WitherTempest_Pulse:
+  Skills:
+  - pull{v=0.45;toorigin=true} @EntitiesNearOrigin{r=6}
+  - damage{a=2} @EntitiesNearOrigin{r=4}
+  - damage{a=2} @EntitiesNearOrigin{r=4} ?~undead
+  - potion{type=wither;duration=40;level=2} @EntitiesNearOrigin{r=4} ?~!undead
+  - particle{p=smoke;a=20;hs=2;vs=0.4;s=0.02;y=0.5} @origin
+  - particlering{p=witch;r=4;points=16;y=0.3} @origin
+WitherTempest_Burst:
+  Skills:
+  - damage{a=8} @EntitiesNearOrigin{r=5}
+  - damage{a=6} @EntitiesNearOrigin{r=5} ?~undead
+  - throw{v=0.9;vy=0.6;fromorigin=true} @EntitiesNearOrigin{r=5}
+  - particle{p=explosion;a=3;hs=1.5;vs=0.5} @origin
+  - particle{p=end_rod;a=60;hs=2.5;vs=1;s=0.15;y=1} @origin
+  - sound{s=entity.generic.explode;p=0.8} @origin
+  - sound{s=block.beacon.deactivate;p=1.5} @origin
+
+# ── 자동: 광휘의 해골 ─────────────────────────────────────────────────
+# weapons/star_greatsword.yml 에서 ~onAttack 25% 로 발동. 맞은 대상(@trigger)을 추적합니다.
+RadiantSkulls:
+  Cooldown: 4
+  Skills:
+  - sound{s=block.beacon.activate;v=0.6;p=2} @self
+  - projectile{model=radiant_skull;anim=fly;v=14;homing=0.25;syo=2.4;so=-1.2;hr=1;md=24;onTick=RadiantSkulls_Tick;onHit=RadiantSkulls_Hit}
+  - delay 4
+  - projectile{model=radiant_skull;anim=fly;v=14;homing=0.25;syo=2.8;so=0;hr=1;md=24;onTick=RadiantSkulls_Tick;onHit=RadiantSkulls_Hit}
+  - delay 4
+  - projectile{model=radiant_skull;anim=fly;v=14;homing=0.25;syo=2.4;so=1.2;hr=1;md=24;onTick=RadiantSkulls_Tick;onHit=RadiantSkulls_Hit}
+RadiantSkulls_Tick:
+  Skills:
+  - particle{p=end_rod;a=1} @origin
+RadiantSkulls_Hit:
+  Skills:
+  - damage{a=4}
+  - damage{a=4} ?~undead
+  - potion{type=wither;duration=40;level=1} ?~!undead
+  - particle{p=end_rod;a=10;hs=0.3;vs=0.3;s=0.08} @origin
+  - sound{s=entity.wither.hurt;v=0.4;p=1.8} @origin
