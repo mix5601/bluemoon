@@ -1,0 +1,117 @@
+# 보스 양식(mobs/boss_templates.yml) 이 쓰는 공통 스킬
+# 보스 고유 공격은 각 몹의 Skills 에 따로 적고, 여기에는 등장/페이즈/처치 연출만 둡니다.
+# 페이즈 스킬은 Cooldown: 9999 로 한 마리당 한 번만 발동합니다.
+
+# ─── 중간 보스 ────────────────────────────────
+MidBoss_Appear:
+  Skills:
+  - sound{s=entity.ravager.roar;v=1.5;p=0.9} @self
+  - message{m="&e[중간 보스] &f<caster.name> 이(가) 앞을 가로막는다!"} @PlayersInRadius{r=32}
+
+MidBoss_Enrage:
+  Cooldown: 9999
+  Skills:
+  - tint{color=FFB040;duration=40} @self
+  - particle{p=flame;a=30;hs=0.6;vs=1;s=0.02;y=1} @self
+  - potion{type=speed;duration=600;level=1;particles=false} @self
+  - potion{type=strength;duration=600;level=1;particles=false} @self
+  - message{m="&e[중간 보스] &f<caster.name> 이(가) 흥분했다!"} @PlayersInRadius{r=32}
+
+MidBoss_Defeated:
+  Skills:
+  - sound{s=entity.player.levelup;p=0.8} @self
+  - message{m="&e[중간 보스] &f<caster.name> 을(를) 물리쳤습니다."} @PlayersInRadius{r=32}
+
+# ─── 보스 ────────────────────────────────────
+Boss_Intro:
+  Skills:
+  - invulnerable{ticks=40} @self
+  - sound{s=entity.wither.spawn;v=2;p=0.8} @self
+  - sendtitle{title="&c&l<caster.name>";subtitle="&7보스가 깨어났습니다";fadein=10;stay=50;fadeout=10} @PlayersInRadius{r=48}
+
+Boss_Phase2:
+  Cooldown: 9999
+  Skills:
+  - invulnerable{ticks=30} @self
+  - tint{color=FF7050;duration=30} @self
+  - sound{s=entity.ender_dragon.growl;v=2;p=1.2} @self
+  - particlering{p=flame;r=3;points=24;y=0.2} @self
+  - throw{v=1.0;vy=0.5} @PlayersInRadius{r=6}
+  - potion{type=resistance;duration=999999;level=1;particles=false} @self
+  - sendtitle{title="&c2 페이즈";subtitle="&f<caster.name> 의 기운이 강해집니다";fadein=5;stay=30;fadeout=10} @PlayersInRadius{r=48}
+
+Boss_Phase3:
+  Cooldown: 9999
+  Skills:
+  - invulnerable{ticks=40} @self
+  - tint{color=FF3030;duration=0} @self
+  - sound{s=entity.wither.ambient;v=2;p=0.6} @self
+  - effect:lightning @PlayersInRadius{r=10}
+  - particlering{p=soul_fire_flame;r=4;points=32;y=0.2} @self
+  - throw{v=1.4;vy=0.6} @PlayersInRadius{r=8}
+  - potion{type=speed;duration=999999;level=2;particles=false} @self
+  - potion{type=strength;duration=999999;level=2;particles=false} @self
+  - sendtitle{title="&4&l최종 페이즈";subtitle="&f<caster.name> 이(가) 폭주합니다";fadein=5;stay=40;fadeout=10} @PlayersInRadius{r=48}
+
+Boss_Defeated:
+  Skills:
+  - sound{s=ui.toast.challenge_complete;v=2} @self
+  - sendtitle{title="&6&l보스 처치";subtitle="&f<caster.name> 을(를) 쓰러뜨렸습니다";fadein=10;stay=60;fadeout=20} @PlayersInRadius{r=48}
+
+# ─── 필드 보스 ────────────────────────────────
+FieldBoss_Announce:
+  Skills:
+  - sound{s=entity.ender_dragon.growl;v=0.6;p=0.7} @PlayersInWorld
+  - message{m="&5&l[필드 보스] &d<caster.name>&f 이(가) &e<caster.x> <caster.y> <caster.z>&f 에 나타났습니다!"} @PlayersInWorld
+  - invulnerable{ticks=60} @self
+
+FieldBoss_Phase2:
+  Cooldown: 9999
+  Skills:
+  - invulnerable{ticks=40} @self
+  - tint{color=C050FF;duration=40} @self
+  - particlering{p=witch;r=5;points=40;y=0.3} @self
+  - throw{v=1.2;vy=0.6} @PlayersInRadius{r=8}
+  - potion{type=resistance;duration=999999;level=1;particles=false} @self
+  - message{m="&5&l[필드 보스] &d<caster.name>&f 의 체력이 절반 남았습니다!"} @PlayersInWorld
+
+FieldBoss_Berserk:
+  Cooldown: 9999
+  Skills:
+  - invulnerable{ticks=40} @self
+  - tint{color=FF2060;duration=0} @self
+  - sound{s=entity.wither.spawn;v=2;p=1.4} @self
+  - effect:lightning @PlayersInRadius{r=12}
+  - potion{type=speed;duration=999999;level=2;particles=false} @self
+  - potion{type=strength;duration=999999;level=2;particles=false} @self
+  - sendtitle{title="&4&l광폭화";subtitle="&f<caster.name> 이(가) 날뛰기 시작합니다";fadein=5;stay=40;fadeout=10} @PlayersInRadius{r=64}
+
+# 싸우는 플레이어가 없으면 2초마다 최대 체력의 약 1% 회복 (자리 비우고 깎기 방지)
+FieldBoss_Regen:
+  Skills:
+  - heal{a=60} @self
+  - particle{p=happy_villager;a=6;hs=0.8;vs=1;y=1} @self
+
+FieldBoss_Defeated:
+  Skills:
+  - sound{s=ui.toast.challenge_complete;v=0.8} @PlayersInWorld
+  - message{m="&5&l[필드 보스] &d<caster.name>&f 이(가) &e<trigger.name>&f 님에게 쓰러졌습니다!"} @PlayersInWorld
+  - sendtitle{title="&d&l필드 보스 처치";subtitle="&f보상을 획득하세요";fadein=10;stay=60;fadeout=20} @PlayersInRadius{r=64}
+
+# ─── 예시 보스(example_bosses.yml) 고유 스킬 ─────────
+GolemKing_RockRain:
+  Cooldown: 6
+  Skills:
+  - animation{a=attack} @self
+  - message{m="&c[<caster.name>] &f돌이 쏟아진다!"} @PlayersInRadius{r=32}
+  - repeat{s=GolemKing_RockRain_Volley;times=3;i=10}
+GolemKing_RockRain_Volley:
+  Skills:
+  - projectile{onTick=GolemRock_Tick;onHit=GolemRock_Hit;onEnd=GolemRock_End;v=16;hr=1;md=32;syo=3} @PlayersInRadius{r=24}
+
+GolemKing_CallGuards:
+  Cooldown: 15
+  Skills:
+  - animation{a=slam} @self
+  - summon{type=StoneGolem;amount=2;radius=4;max=4} @selflocation
+  - message{m="&c[<caster.name>] &f일어나라, 나의 병사들이여!"} @PlayersInRadius{r=32}

@@ -137,6 +137,54 @@ StoneGolem:
 
 모델을 스킬로 붙일 수도 있습니다: `- model{mid=golem} @self ~onSpawn`
 
+### 보스바 (`BossBar`)
+
+```yaml
+  BossBar:
+    Enabled: true          # 섹션이 있으면 기본 true
+    Title: '&c&l<caster.name>'   # 기본값 Display. <caster.hp>, <caster.mhp>, <target.name> 등 사용 가능
+    Color: RED             # PINK, BLUE, RED, GREEN, YELLOW, PURPLE, WHITE
+    Style: SEGMENTED_10    # SOLID, SEGMENTED_6, SEGMENTED_10, SEGMENTED_12, SEGMENTED_20
+    Range: 48              # 이 거리 안의 플레이어에게 표시
+    DarkenSky: false
+    PlayMusic: false       # 보스 음악
+    CreateFog: false
+```
+
+### 양식 상속 (`Template`)
+
+`Template: 이름` 으로 다른 몹 설정을 물려받습니다 (`Template: A,B` 처럼 여러 개, 뒤가 우선). 다른 파일에 있어도 됩니다.
+
+- 값(`Health`, `Display` ...)은 몹 쪽이 덮어쓰고, 섹션(`Options`, `BossBar`, `Model` ...)은 키 단위로 합쳐집니다.
+- `Skills`, `Drops` 목록은 양식 뒤에 몹의 목록이 이어 붙습니다.
+- `Abstract: true` 인 양식은 상속 전용이라 소환/목록에 나오지 않습니다. (`Abstract` 는 상속되지 않습니다)
+
+### 보스 양식
+
+`mobs/boss_templates.yml` 에 등급별 양식이 들어 있고, 공통 연출 스킬은 `skills/boss_skills.yml` 에 있습니다.
+
+| 양식 | 체력 | 보스바 | 페이즈 | 알림 | 특징 |
+| --- | --- | --- | --- | --- | --- |
+| `MidBoss` 중간 보스 | 400 | 노랑, 6칸, 32블록 | 50% 흥분 | 주변 32블록 | |
+| `Boss` 보스 | 1500 | 빨강, 10칸, 48블록, 하늘 어둡게, 보스 음악 | 66% / 33% | 주변 48블록 타이틀 | 등장·페이즈 전환 시 잠깐 무적 |
+| `FieldBoss` 필드 보스 | 6000 | 보라, 20칸, 96블록, 안개 | 50% / 20% 광폭화 | 월드 전체 (좌표 포함) | 싸우는 상대가 없으면 체력 회복 |
+
+```yaml
+GolemKing:
+  Template: Boss          # 체력/보스바/페이즈/알림/보상은 양식에서
+  Type: ZOMBIE
+  Display: '&c골렘 왕'
+  Model:
+    Id: golem
+    Scale: 2.0
+  Drops:                  # 양식의 exp 300 뒤에 추가
+  - diamond 1-3
+  Skills:                 # 양식의 페이즈 스킬 뒤에 추가
+  - skill{s=GolemSlam} @target ~onTimer:80 ?~distance{max=6}
+```
+
+예시: `mobs/example_bosses.yml` – `GolemCaptain`(중간 보스), `GolemKing`(보스), `AncientGolem`(필드 보스)
+
 ## 스킬 (`skills/*.yml`)
 
 ```yaml

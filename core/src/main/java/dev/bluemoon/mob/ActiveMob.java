@@ -11,15 +11,23 @@ import dev.bluemoon.model.runtime.ModelInstance;
 import dev.bluemoon.skill.CompiledSkillLine;
 import dev.bluemoon.skill.SkillMeta;
 import dev.bluemoon.skill.SkillTrigger;
+import dev.bluemoon.util.Text;
+import net.kyori.adventure.bossbar.BossBar;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Location;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
+import org.bukkit.entity.Player;
 import org.bukkit.persistence.PersistentDataType;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /** A living BlueMoon mob: the vanilla entity (hitbox / AI) plus its Blockbench model. */
@@ -39,6 +47,8 @@ public final class ActiveMob implements ModelHost {
     private int movingTicks;
     private UUID owner;
     private int lifetime;
+    private BossBar bossBar;
+    private final Set<UUID> bossBarViewers = new HashSet<>();
 
     ActiveMob(BlueMoonPlugin plugin, LivingEntity entity, MobType type) {
         this.plugin = plugin;
@@ -135,6 +145,7 @@ public final class ActiveMob implements ModelHost {
         lastLocation = entity.getLocation();
         lastBodyYaw = entity.getBodyYaw();
         dying = true;
+        hideBossBar();
         String state = model != null && model.blueprint.animation(type.animation("despawn")) != null ? "despawn" : "death";
         beginDeathAnimation(state);
         entity.remove();
@@ -176,12 +187,16 @@ public final class ActiveMob implements ModelHost {
         }
     }
 
-    /** Despawns the display entities only; the model is restored when the entity loads again. */
+    /**
+     * Despawns the display entities (and hides the boss bar) only; the model is restored when the
+     * entity loads again.
+     */
     void despawnModel() {
         if (model != null) {
             model.remove();
             model = null;
         }
+        hideBossBar();
     }
 
     /** Re-creates the model saved on the entity (after chunk load / reload). */
@@ -278,7 +293,66 @@ public final class ActiveMob implements ModelHost {
         if (owner != null && !dying) {
             tickOwner();
         }
+        if (type.bossBar() != null && !dying) {
+            tickBossBar(type.bossBar());
+        }
         return true;
+    }
+
+    // --- boss bar ------------------------------------------------------------
+
+    private void tickBossBar(MobType.BossBarSettings settings) {
+        if (bossBar == null) {
+            bossBar = BossBar.bossBar(Component.empty(), 1f, settings.color(), settings.overlay(), settings.flags());
+        }
+        AttributeInstance max = entity.getAttribute(Attribute.MAX_HEALTH);
+        double maxHealth = max == null ? entity.getHealth() : max.getValue();
+        float progress = maxHealth <= 0 ? 0f : (float) Math.max(0, Math.min(1, entity.getHealth() / maxHealth));
+        if (progress != bossBar.progress()) {
+            bossBar.progress(progress);
+        }
+        // title placeholders and viewers only need refreshing a couple of times a second
+        if (ticks % 10 != 1) {
+            return;
+        }
+        String title = settings.title();
+        if (title.indexOf('<') >= 0) {
+            title = Text.placeholders(title, SkillMeta.create(plugin, entity, this, null),
+                    entity instanceof Mob mob ? mob.getTarget() : null);
+        }
+        bossBar.name(Text.color(title));
+
+        Location loc = entity.getLocation();
+        double range = settings.range() * settings.range();
+        Set<UUID> inRange = new HashSet<>();
+        for (Player player : entity.getWorld().getPlayers()) {
+            if (player.getLocation().distanceSquared(loc) <= range) {
+                inRange.add(player.getUniqueId());
+                player.showBossBar(bossBar);
+            }
+        }
+        for (UUID id : bossBarViewers) {
+            Player player = inRange.contains(id) ? null : Bukkit.getPlayer(id);
+            if (player != null) {
+                player.hideBossBar(bossBar);
+            }
+        }
+        bossBarViewers.clear();
+        bossBarViewers.addAll(inRange);
+    }
+
+    private void hideBossBar() {
+        if (bossBar == null) {
+            return;
+        }
+        for (UUID id : bossBarViewers) {
+            Player player = Bukkit.getPlayer(id);
+            if (player != null) {
+                player.hideBossBar(bossBar);
+            }
+        }
+        bossBarViewers.clear();
+        bossBar = null;
     }
 
     private static float wrap(float degrees) {
@@ -338,6 +412,7 @@ public final class ActiveMob implements ModelHost {
         lastLocation = entity.getLocation();
         lastBodyYaw = entity.getBodyYaw();
         dying = true;
+        hideBossBar();
         trigger(SkillTrigger.DEATH, killer);
         beginDeathAnimation("death");
     }

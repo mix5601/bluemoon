@@ -22,6 +22,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -41,6 +42,9 @@ public final class MobManager {
 
     public void load() {
         types.clear();
+        // read every file first so templates may live in any file
+        Map<String, ConfigurationSection> raw = new LinkedHashMap<>();
+        Map<String, String> fileOf = new HashMap<>();
         File dir = new File(plugin.getDataFolder(), plugin.mobFolder());
         for (File file : Yaml.files(dir)) {
             YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
@@ -49,12 +53,23 @@ public final class MobManager {
                 if (sec == null) {
                     continue;
                 }
-                if (types.containsKey(key.toLowerCase(Locale.ROOT))) {
+                String id = key.toLowerCase(Locale.ROOT);
+                if (raw.containsKey(id)) {
                     plugin.getLogger().warning(file.getName() + ": 같은 이름의 몹이 이미 있습니다: " + key);
                     continue;
                 }
-                types.put(key.toLowerCase(Locale.ROOT), MobType.load(plugin, key, sec, file.getName()));
+                raw.put(id, sec);
+                fileOf.put(id, file.getName());
             }
+        }
+        MobTemplates templates = new MobTemplates(raw, msg -> plugin.getLogger().warning(msg));
+        for (Map.Entry<String, ConfigurationSection> e : raw.entrySet()) {
+            ConfigurationSection sec = templates.resolve(e.getKey());
+            if (sec == null || MobTemplates.isAbstract(e.getValue())) {
+                continue;
+            }
+            String key = e.getValue().getName();
+            types.put(e.getKey(), MobType.load(plugin, key, sec, fileOf.get(e.getKey())));
         }
     }
 

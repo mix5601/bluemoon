@@ -4,6 +4,7 @@ import dev.bluemoon.BlueMoonPlugin;
 import dev.bluemoon.skill.CompiledSkillLine;
 import dev.bluemoon.skill.SkillTrigger;
 import dev.bluemoon.util.Yaml;
+import net.kyori.adventure.bossbar.BossBar;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -13,15 +14,22 @@ import org.bukkit.entity.LivingEntity;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /** A mob definition from {@code plugins/BlueMoon/mobs/*.yml} (MythicMobs style keys). */
 public final class MobType {
 
     public record Drop(Material material, int min, int max, double chance) {
+    }
+
+    /** {@code BossBar:} section; the bar is shown to players within {@code range} blocks. */
+    public record BossBarSettings(String title, BossBar.Color color, BossBar.Overlay overlay, double range,
+                                  Set<BossBar.Flag> flags) {
     }
 
     private final String id;
@@ -49,6 +57,7 @@ public final class MobType {
     private double teleportDistance = 24;
     private boolean assistOwner = true;
     private int exp = -1;
+    private BossBarSettings bossBar;
     private final Map<SkillTrigger, List<CompiledSkillLine>> triggers = new EnumMap<>(SkillTrigger.class);
     private final List<CompiledSkillLine> timers = new ArrayList<>();
 
@@ -116,6 +125,11 @@ public final class MobType {
             t.assistOwner = Yaml.getBoolean(summon, "AssistOwner", true);
         }
 
+        ConfigurationSection bar = Yaml.section(sec, "BossBar");
+        if (bar != null && Yaml.getBoolean(bar, "Enabled", true)) {
+            t.bossBar = loadBossBar(plugin, bar, t, where);
+        }
+
         for (String raw : Yaml.stringList(sec, "Drops")) {
             String[] parts = raw.trim().split("\\s+");
             if (parts[0].equalsIgnoreCase("exp")) {
@@ -147,6 +161,40 @@ public final class MobType {
             }
         }
         return t;
+    }
+
+    private static BossBarSettings loadBossBar(BlueMoonPlugin plugin, ConfigurationSection bar, MobType t, String where) {
+        String colorName = Yaml.getString(bar, "Color", "RED");
+        BossBar.Color color = BossBar.Color.NAMES.value(colorName.toLowerCase(Locale.ROOT));
+        if (color == null) {
+            plugin.getLogger().warning(where + ": 보스바 색 '" + colorName + "' 을 알 수 없습니다 (PINK, BLUE, RED, GREEN, YELLOW, PURPLE, WHITE)");
+            color = BossBar.Color.RED;
+        }
+        String styleName = Yaml.getString(bar, "Style", "SOLID").toUpperCase(Locale.ROOT);
+        BossBar.Overlay overlay = switch (styleName) {
+            case "SOLID", "PROGRESS" -> BossBar.Overlay.PROGRESS;
+            case "SEGMENTED_6", "NOTCHED_6" -> BossBar.Overlay.NOTCHED_6;
+            case "SEGMENTED_10", "NOTCHED_10" -> BossBar.Overlay.NOTCHED_10;
+            case "SEGMENTED_12", "NOTCHED_12" -> BossBar.Overlay.NOTCHED_12;
+            case "SEGMENTED_20", "NOTCHED_20" -> BossBar.Overlay.NOTCHED_20;
+            default -> {
+                plugin.getLogger().warning(where + ": 보스바 스타일 '" + styleName
+                        + "' 을 알 수 없습니다 (SOLID, SEGMENTED_6, SEGMENTED_10, SEGMENTED_12, SEGMENTED_20)");
+                yield BossBar.Overlay.PROGRESS;
+            }
+        };
+        Set<BossBar.Flag> flags = EnumSet.noneOf(BossBar.Flag.class);
+        if (Yaml.getBoolean(bar, "DarkenSky", false)) {
+            flags.add(BossBar.Flag.DARKEN_SCREEN);
+        }
+        if (Yaml.getBoolean(bar, "PlayMusic", false)) {
+            flags.add(BossBar.Flag.PLAY_BOSS_MUSIC);
+        }
+        if (Yaml.getBoolean(bar, "CreateFog", false)) {
+            flags.add(BossBar.Flag.CREATE_WORLD_FOG);
+        }
+        String title = Yaml.getString(bar, "Title", t.display != null ? t.display : t.id);
+        return new BossBarSettings(title, color, overlay, Math.max(1, Yaml.getDouble(bar, "Range", 48)), flags);
     }
 
     private static Double optional(ConfigurationSection sec, String name) {
@@ -270,6 +318,11 @@ public final class MobType {
 
     public int exp() {
         return exp;
+    }
+
+    /** Boss bar settings, or null when the mob has no boss bar. */
+    public BossBarSettings bossBar() {
+        return bossBar;
     }
 
     public List<CompiledSkillLine> lines(SkillTrigger trigger) {

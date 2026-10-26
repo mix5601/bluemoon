@@ -28,7 +28,8 @@ public final class BlueMoon extends BlueMoonPlugin {
 
     @Override
     protected List<String> exampleResources() {
-        return List.of("models/golem.bbmodel", "mobs/example_mobs.yml", "skills/example_skills.yml");
+        return List.of("models/golem.bbmodel", "mobs/example_mobs.yml", "skills/example_skills.yml",
+                "mobs/boss_templates.yml", "mobs/example_bosses.yml", "skills/boss_skills.yml");
     }
 
     @Override
