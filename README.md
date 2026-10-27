@@ -163,11 +163,17 @@ StoneGolem:
 
 `mobs/boss_templates.yml` 에 등급별 양식이 들어 있고, 공통 연출 스킬은 `skills/boss_skills.yml` 에 있습니다.
 
-| 양식 | 체력 | 보스바 | 페이즈 | 알림 | 특징 |
-| --- | --- | --- | --- | --- | --- |
-| `MidBoss` 중간 보스 | 400 | 노랑, 6칸, 32블록 | 50% 흥분 | 주변 32블록 | |
-| `Boss` 보스 | 1500 | 빨강, 10칸, 48블록, 하늘 어둡게, 보스 음악 | 66% / 33% | 주변 48블록 타이틀 | 등장·페이즈 전환 시 잠깐 무적 |
-| `FieldBoss` 필드 보스 | 6000 | 보라, 20칸, 96블록, 안개 | 50% / 20% 광폭화 | 월드 전체 (좌표 포함) | 싸우는 상대가 없으면 체력 회복 |
+| 양식 | 체력 | 페이즈 | 고유 스킬 (1P / 2P / 3P) | 보스바 | 알림 | 특징 |
+| --- | --- | --- | --- | --- | --- | --- |
+| `MiniBoss` 미니 보스 | 150 | 1 | 2 (기본기·견제기) | 초록, 1칸, 16블록 | 주변 16블록 액션바 | |
+| `MidBoss` 중간 보스 | 400 | 2 (50%) | 4 = 3 / +1 강화기 | 노랑, 6칸, 32블록 | 주변 32블록 | 50% 흥분 |
+| `Boss` 보스 | 1500 | 3 (66% / 33%) | 6 = 3 / +2 기믹 / +1 필살기 | 빨강, 10칸, 48블록, 하늘 어둡게, 보스 음악 | 주변 48블록 타이틀 | 등장·페이즈 전환 시 2초 무적 |
+| `FieldBoss` 필드 보스 | 6000 | 3 (50% / 20%) | 6 = 3 / +2 / +1 필살기 | 보라, 20칸, 96블록, 안개 | 월드 전체 (좌표 포함) | 20% 광폭화, 싸우는 상대가 없으면 체력 회복 |
+
+- **고유 스킬** = 몹의 `Skills` 중 `~onTimer` 로 도는 공격 패턴 (양식이 넣는 등장/페이즈/처치 연출은 제외)
+- **페이즈 배치** = 스킬 라인에 `?healthpercent{max=페이즈 경계}` 를 붙이면 그 페이즈부터 추가됩니다. 앞 페이즈 스킬은 계속 씁니다.
+- **스킬 역할**: 기본기(근접 주력) · 견제기(원거리) · 광역기(주변 전체) · 강화기(돌진/연속기) · 기믹(소환, 장판, 투사체 세례) · 필살기(마지막 페이즈, 반드시 예고 후 발동)
+- 복사해서 쓰는 작성 양식은 `mobs/boss_templates.yml` 맨 위 주석에 있습니다.
 
 ```yaml
 GolemKing:
@@ -180,10 +186,18 @@ GolemKing:
   Drops:                  # 양식의 exp 300 뒤에 추가
   - diamond 1-3
   Skills:                 # 양식의 페이즈 스킬 뒤에 추가
+  # 1페이즈: 기본기 / 견제기 / 광역기
   - skill{s=GolemSlam} @target ~onTimer:80 ?~distance{max=6}
+  - skill{s=GolemRock} @target ~onTimer:60 ?~distance{min=6;max=32}
+  - skill{s=GolemStomp} @self ~onTimer:140 ?hastarget
+  # 2페이즈 (66%): 기믹 2개
+  - skill{s=GolemKing_RockRain} @target ~onTimer:160 ?healthpercent{max=0.66}
+  - skill{s=GolemKing_CallGuards} @self ~onTimer:300 ?healthpercent{max=0.66}
+  # 3페이즈 (33%): 필살기
+  - skill{s=GolemKing_Cataclysm} @self ~onTimer:400 ?healthpercent{max=0.33} ?hastarget
 ```
 
-예시: `mobs/example_bosses.yml` – `GolemCaptain`(중간 보스), `GolemKing`(보스), `AncientGolem`(필드 보스)
+예시: `mobs/example_bosses.yml` – `GolemSentry`(미니 보스), `GolemCaptain`(중간 보스), `GolemKing`(보스), `AncientGolem`(필드 보스)
 
 ## 스킬 (`skills/*.yml`)
 

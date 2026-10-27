@@ -10,10 +10,14 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -115,16 +119,10 @@ class MobTemplatesTest {
     /** The shipped boss examples must resolve against the shipped templates without warnings. */
     @Test
     void exampleBossTemplatesResolve() throws Exception {
-        Map<String, ConfigurationSection> raw = new LinkedHashMap<>();
-        for (Path file : mobFiles()) {
-            YamlConfiguration yml = YamlConfiguration.loadConfiguration(file.toFile());
-            for (String key : yml.getKeys(false)) {
-                raw.put(key.toLowerCase(Locale.ROOT), yml.getConfigurationSection(key));
-            }
-        }
+        Map<String, ConfigurationSection> raw = shippedMobs();
         List<String> warnings = new ArrayList<>();
         MobTemplates templates = new MobTemplates(raw, warnings::add);
-        for (String tier : List.of("midboss", "boss", "fieldboss")) {
+        for (String tier : TIER_SKILLS.keySet()) {
             assertTrue(raw.containsKey(tier), "missing template " + tier);
             assertTrue(MobTemplates.isAbstract(raw.get(tier)), tier + " should be Abstract");
         }
@@ -136,6 +134,52 @@ class MobTemplatesTest {
             }
         }
         assertTrue(warnings.isEmpty(), warnings.toString());
+    }
+
+    /** Own timer skills per phase for each tier, as in the "등급 규격" table of boss_templates.yml. */
+    private static final Map<String, List<Integer>> TIER_SKILLS = Map.of(
+            "miniboss", List.of(2),
+            "midboss", List.of(3, 1),
+            "boss", List.of(3, 2, 1),
+            "fieldboss", List.of(3, 2, 1));
+
+    private static final Pattern HEALTH_MAX = Pattern.compile("\\?healthpercent\\{max=([0-9.]+)}");
+
+    /** The shipped example bosses must have as many own skills per phase as their tier asks for. */
+    @Test
+    void exampleBossesFollowTierSpec() throws Exception {
+        Map<String, ConfigurationSection> raw = shippedMobs();
+        int checked = 0;
+        for (ConfigurationSection mob : raw.values()) {
+            String tier = mob.getString("Template", "").toLowerCase(Locale.ROOT);
+            if (!TIER_SKILLS.containsKey(tier)) {
+                continue;
+            }
+            // phase threshold (1.0 = first phase) -> number of own timer skills starting there
+            TreeMap<Double, Integer> phases = new TreeMap<>(Comparator.reverseOrder());
+            for (String line : mob.getStringList("Skills")) {
+                if (!line.contains("~onTimer")) {
+                    continue;
+                }
+                Matcher m = HEALTH_MAX.matcher(line);
+                phases.merge(m.find() ? Double.parseDouble(m.group(1)) : 1.0, 1, Integer::sum);
+            }
+            assertEquals(TIER_SKILLS.get(tier), new ArrayList<>(phases.values()),
+                    mob.getName() + " (" + tier + ") skills per phase");
+            checked++;
+        }
+        assertEquals(TIER_SKILLS.size(), checked, "one example per tier");
+    }
+
+    private static Map<String, ConfigurationSection> shippedMobs() throws IOException, URISyntaxException {
+        Map<String, ConfigurationSection> raw = new LinkedHashMap<>();
+        for (Path file : mobFiles()) {
+            YamlConfiguration yml = YamlConfiguration.loadConfiguration(file.toFile());
+            for (String key : yml.getKeys(false)) {
+                raw.put(key.toLowerCase(Locale.ROOT), yml.getConfigurationSection(key));
+            }
+        }
+        return raw;
     }
 
     private static List<Path> mobFiles() throws IOException, URISyntaxException {

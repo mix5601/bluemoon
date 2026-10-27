@@ -2,6 +2,17 @@
 # 보스 고유 공격은 각 몹의 Skills 에 따로 적고, 여기에는 등장/페이즈/처치 연출만 둡니다.
 # 페이즈 스킬은 Cooldown: 9999 로 한 마리당 한 번만 발동합니다.
 
+# ─── 미니 보스 ────────────────────────────────
+MiniBoss_Appear:
+  Skills:
+  - sound{s=entity.evoker.prepare_attack;p=0.8} @self
+  - actionmessage{m="&a[미니 보스] &f<caster.name> 이(가) 나타났다"} @PlayersInRadius{r=16}
+
+MiniBoss_Defeated:
+  Skills:
+  - sound{s=entity.experience_orb.pickup;p=0.7} @self
+  - actionmessage{m="&a[미니 보스] &f<caster.name> 처치"} @PlayersInRadius{r=16}
+
 # ─── 중간 보스 ────────────────────────────────
 MidBoss_Appear:
   Skills:
@@ -32,8 +43,8 @@ Boss_Intro:
 Boss_Phase2:
   Cooldown: 9999
   Skills:
-  - invulnerable{ticks=30} @self
-  - tint{color=FF7050;duration=30} @self
+  - invulnerable{ticks=40} @self
+  - tint{color=FF7050;duration=40} @self
   - sound{s=entity.ender_dragon.growl;v=2;p=1.2} @self
   - particlering{p=flame;r=3;points=24;y=0.2} @self
   - throw{v=1.0;vy=0.5} @PlayersInRadius{r=6}
@@ -99,6 +110,31 @@ FieldBoss_Defeated:
   - sendtitle{title="&d&l필드 보스 처치";subtitle="&f보상을 획득하세요";fadein=10;stay=60;fadeout=20} @PlayersInRadius{r=64}
 
 # ─── 예시 보스(example_bosses.yml) 고유 스킬 ─────────
+# 기본기 GolemSlam, 견제기 GolemRock 은 example_skills.yml 에 있습니다.
+
+# 광역기: 제자리에서 땅을 굴러 주변 5블록을 밀쳐 냄
+GolemStomp:
+  Cooldown: 8
+  Skills:
+  - animation{a=attack} @self
+  - particlering{p=block;m=stone;r=2;points=16;y=0.2} @self
+  - delay 14
+  - sound{s=entity.generic.explode;v=1.2;p=0.6} @self
+  - particlering{p=cloud;r=5;points=32;y=0.2} @self
+  - damage{a=7} @PlayersInRadius{r=5}
+  - throw{v=1.0;vy=0.5} @PlayersInRadius{r=5}
+
+# 강화기: 대상에게 돌진해 부딪힌 플레이어를 날림
+GolemCharge:
+  Cooldown: 7
+  Skills:
+  - animation{a=attack} @self
+  - sound{s=entity.ravager.step;v=1.5;p=0.7} @self
+  - lunge{v=1.6;vy=0.2} @target
+  - delay 8
+  - damage{a=8} @PlayersInRadius{r=2.5}
+  - throw{v=1.2;vy=0.4} @PlayersInRadius{r=2.5}
+
 GolemKing_RockRain:
   Cooldown: 6
   Skills:
@@ -115,3 +151,20 @@ GolemKing_CallGuards:
   - animation{a=slam} @self
   - summon{type=StoneGolem;amount=2;radius=4;max=4} @selflocation
   - message{m="&c[<caster.name>] &f일어나라, 나의 병사들이여!"} @PlayersInRadius{r=32}
+
+# 필살기: 2초 예고 후 주변 10블록 전체에 낙뢰와 큰 피해. 멀리 벗어나면 피할 수 있음
+GolemKing_Cataclysm:
+  Cooldown: 20
+  Skills:
+  - invulnerable{ticks=40} @self
+  - animation{a=attack} @self
+  - sendtitle{title="&4&l!";subtitle="&c<caster.name> 에게서 멀어지세요!";fadein=0;stay=30;fadeout=5} @PlayersInRadius{r=16}
+  - sound{s=entity.warden.sonic_charge;v=2;p=0.6} @self
+  - particlering{p=soul_fire_flame;r=10;points=60;y=0.2} @self
+  - delay 20
+  - particlering{p=soul_fire_flame;r=10;points=60;y=0.2} @self
+  - delay 20
+  - effect:lightning @PlayersInRadius{r=10}
+  - sound{s=entity.generic.explode;v=2;p=0.5} @self
+  - damage{a=16} @PlayersInRadius{r=10}
+  - throw{v=1.6;vy=0.8} @PlayersInRadius{r=10}
